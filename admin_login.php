@@ -9,10 +9,11 @@
 <body>
     <div class="login-container">
         <h2 class="login-title">Admin Login</h2>
-        <form class="login-form">
-            <input type="text" name="username" class="login-input" placeholder="Username" required>
-            <input type="password" name="password" class="login-input" placeholder="Password" required>
-            <button type="submit" class="login-button">Login</button>
+        <form class="login-form" role="form" method="post" 
+action="admin_login.php">
+            <input type="text" name="admin_name" class="login-input" placeholder="Username" required>
+            <input type="password" name="admin_pass" class="login-input" placeholder="Password" required>
+            <button type="submit" value="login" name="admin_login" class="login-button">Login</button>
         </form>
       
     </div>
