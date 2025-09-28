@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - View Users</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="view_users.css">
+    <style>
+        .admin-header {
+            background: #343a40;
+            color: white;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        .admin-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stats-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-header">
+        <div class="admin-nav">
+            <h2>Admin Dashboard</h2>
+            <div>
+                <span>Welcome, Admin</span>
+                <button class="btn btn-outline-light ms-3" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <div class="stats-number" id="totalUsers">0</div>
+                    <div>Total Users</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <div class="stats-number" id="activeUsers">0</div>
+                    <div>Active Today</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <div class="stats-number" id="newUsers">0</div>
+                    <div>New This Week</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <div class="stats-number" id="adminSessions">1</div>
+                    <div>Admin Sessions</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>User Management</h3>
+                    <div>
+                        <button class="btn btn-primary" onclick="exportUsers()">Export Users</button>
+                        <button class="btn btn-success" onclick="addDemoUser()">Add Demo User</button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>User ID</th>
+                                <th>User Name</th>
+                                <th>User Email</th>
+                                <th>Registration Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Check admin authentication
+        function checkAdminAuth() {
+            const adminUser = JSON.parse(localStorage.getItem('adminUser'));
+            if (!adminUser) {
+                alert('Please login as admin first');
+                window.location.href = 'admin-login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Load and display users
+        function loadUsers() {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const tbody = document.getElementById('usersTableBody');
+            
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const registrationDate = new Date(user.id).toLocaleDateString();
+                const row = `
+                    <tr id="user-${user.id}">
+                        <td>${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.email}</td>
+                        <td>${registrationDate}</td>
+                        <td><span class="badge bg-success">Active</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="viewUser(${user.id})">View</button>
+                            <button class="btn btn-sm btn-warning" onclick="editUser(${user.id})">Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            updateStats();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const now = new Date();
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('activeUsers').textContent = Math.floor(users.length * 0.7); // Simulate active users
+            
+            const newUsers = users.filter(user => new Date(user.id) > weekAgo).length;
+            document.getElementById('newUsers').textContent = newUsers;
+        }
+
+        // Delete user
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                let users = JSON.parse(localStorage.getItem('users')) || [];
+                users = users.filter(user => user.id !== userId);
+                localStorage.setItem('users', JSON.stringify(users));
+                loadUsers();
+                alert('User deleted successfully!');
+            }
+        }
+
+        // View user details
+        function viewUser(userId) {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const user = users.find(u => u.id === userId);
+            
+            if (user) {
+                alert(`User Details:\n\nID: ${user.id}\nName: ${user.name}\nEmail: ${user.email}\nRegistration: ${new Date(user.id).toLocaleString()}`);
+            }
+        }
+
+        // Edit user (simplified)
+        function editUser(userId) {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const userIndex = users.findIndex(u => u.id === userId);
+            
+            if (userIndex !== -1) {
+                const user = users[userIndex];
+                const newName = prompt('Enter new name:', user.name);
+                const newEmail = prompt('Enter new email:', user.email);
+                
+                if (newName && newEmail) {
+                    users[userIndex].name = newName;
+                    users[userIndex].email = newEmail;
+                    localStorage.setItem('users', JSON.stringify(users));
+                    loadUsers();
+                    alert('User updated successfully!');
+                }
+            }
+        }
+
+        // Add demo user
+        function addDemoUser() {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const demoUser = {
+                id: Date.now(),
+                name: `Demo User ${users.length + 1}`,
+                email: `demo${users.length + 1}@example.com`,
+                password: 'demo123'
+            };
+            
+            users.push(demoUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            loadUsers();
+            alert('Demo user added successfully!');
+        }
+
+        // Export users (simplified)
+        function exportUsers() {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const csvContent = "ID,Name,Email,Registration Date\n" + 
+                users.map(user => `${user.id},${user.name},${user.email},${new Date(user.id).toLocaleDateString()}`).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'users.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('adminUser');
+            alert('Admin logged out successfully');
+            window.location.href = 'admin-login.html';
+        }
+
+        // Initialize page
+        window.onload = function() {
+            if (checkAdminAuth()) {
+                loadUsers();
+            }
+        };
+    </script>
+</body>
+</html>

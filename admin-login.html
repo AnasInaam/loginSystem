@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Login</title>
+    <link rel="stylesheet" href="admin_login.css">
+</head>
+<body>
+    <div class="login-container">
+        <h2 class="login-title">Admin Login</h2>
+        <form id="adminLoginForm" class="login-form">
+            <input type="text" id="adminName" class="login-input" placeholder="Username" required>
+            <input type="password" id="adminPassword" class="login-input" placeholder="Password" required>
+            <button type="submit" class="login-button">Login</button>
+        </form>
+        <center style="margin-top: 15px;">
+            <a href="index.html" style="color: #007bff; text-decoration: none;">Back to User Login</a>
+        </center>
+    </div>
+
+    <script>
+        // Admin credentials (in real app, this would be more secure)
+        const adminCredentials = {
+            username: 'admin',
+            password: 'admin123'
+        };
+
+        document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('adminName').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            if (username === adminCredentials.username && password === adminCredentials.password) {
+                // Store admin session
+                localStorage.setItem('adminUser', JSON.stringify({
+                    username: username,
+                    role: 'admin',
+                    loginTime: new Date().toISOString()
+                }));
+                
+                alert('Admin login successful!');
+                window.location.href = 'admin-dashboard.html';
+            } else {
+                alert('Admin credentials are incorrect!');
+            }
+        });
+    </script>
+</body>
+</html>

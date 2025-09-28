@@ -1,0 +1,34 @@
+# Ignore PHP files (no longer needed)
+*.php
+
+# Ignore database files
+db_conection.php
+delete.php
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore temporary files
+*.tmp
+*.temp
+*~
+
+# Ignore log files
+*.log
+
+# Ignore backup files
+*.bak
+*.backup
+
+# Node modules (if using any build tools)
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files
+.env

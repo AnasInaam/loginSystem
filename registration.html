@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration</title>
+    <link rel="stylesheet" href="registration.css">
+</head>
+
+<body>
+    <div class="main-class">
+        <div class="bar-class">
+            <div class="main-bar-home-class">HOME</div>
+            <div class="main-bar-menu-class">
+                <div class="menu">
+                    <div class="menu-image">
+                        <div class="line-class"></div>
+                        <div class="line-class"></div>
+                        <div class="line-class"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="login-info-class">
+            <div class="main-landing-class">
+                <div class="text-class">Start Your Journey!</div>
+            </div>
+            <div class="login-class">
+                <div class="form-class">
+                    <form id="registrationForm">
+                        <div class="register-class">Register here</div>
+                        <div class="form-group">
+                            <label class="label-class" for="username">Your Username:</label>
+                            <input class="form-input" id="username" name="username" type="text" placeholder="Username" required autofocus>
+                        </div>
+                        <div class="form-group">
+                            <label class="label-class" for="email">Email Address:</label>
+                            <input class="form-input" id="email" name="email" type="email" placeholder="E-mail" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="label-class" for="password">Password:</label>
+                            <input class="form-input" id="password" name="password" type="password" placeholder="Password" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="label-class" for="confirmPassword">Confirm Password:</label>
+                            <input class="form-input" id="confirmPassword" name="confirmPassword" type="password" placeholder="Confirm Password" required>
+                        </div>
+                        <div class="form-group-one">
+                            <button class="button-class" type="button" onclick="resetForm()">Reset</button>
+                            <button class="button-class" type="submit">Register</button>
+                        </div>
+                    </form>
+                    <center>
+                        <b>Already registered?</b> <a class="color-class" href="index.html">Login here</a>
+                    </center>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validation
+            if (!username) {
+                alert('Please enter the username');
+                return;
+            }
+            
+            if (!email) {
+                alert('Please enter the email');
+                return;
+            }
+            
+            if (!password) {
+                alert('Please enter the password');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('Password must be at least 6 characters long');
+                return;
+            }
+            
+            // Get existing users
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            
+            // Check if email already exists
+            const existingUser = users.find(u => u.email === email);
+            if (existingUser) {
+                alert(`Email ${email} is already registered. Please go to login page!`);
+                return;
+            }
+            
+            // Create new user
+            const newUser = {
+                id: Date.now(), // Simple ID generation
+                name: username,
+                email: email,
+                password: password
+            };
+            
+            // Add user to array and save
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            alert('Registration successful! Redirecting to login page...');
+            window.location.href = 'index.html';
+        });
+
+        function resetForm() {
+            document.getElementById('registrationForm').reset();
+        }
+    </script>
+</body>
+
+</html>
