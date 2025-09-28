@@ -45,59 +45,185 @@
     </div>
 
     <div class="container">
+        <!-- Navigation Tabs -->
+        <div class="container mb-3">
+            <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="users-tab" data-bs-toggle="tab" href="#users" role="tab">Users</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="analytics-tab" data-bs-toggle="tab" href="#analytics" role="tab">Analytics</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="security-tab" data-bs-toggle="tab" href="#security" role="tab">Security</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="system-tab" data-bs-toggle="tab" href="#system" role="tab">System</a>
+                </li>
+            </ul>
+        </div>
+
         <div class="row mb-4">
             <div class="col-md-3">
                 <div class="stats-card text-center">
                     <div class="stats-number" id="totalUsers">0</div>
                     <div>Total Users</div>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;" id="userGrowth"></div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stats-card text-center">
                     <div class="stats-number" id="activeUsers">0</div>
                     <div>Active Today</div>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;" id="activeGrowth"></div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stats-card text-center">
                     <div class="stats-number" id="newUsers">0</div>
                     <div>New This Week</div>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;" id="newUserGrowth"></div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stats-card text-center">
-                    <div class="stats-number" id="adminSessions">1</div>
-                    <div>Admin Sessions</div>
+                    <div class="stats-number" id="systemHealth">Good</div>
+                    <div>System Health</div>
+                    <div style="font-size: 12px; margin-top: 5px;" id="lastUpdate"></div>
                 </div>
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3>User Management</h3>
-                    <div>
-                        <button class="btn btn-primary" onclick="exportUsers()">Export Users</button>
-                        <button class="btn btn-success" onclick="addDemoUser()">Add Demo User</button>
+        <div class="tab-content" id="adminTabContent">
+            <!-- Users Tab -->
+            <div class="tab-pane fade show active" id="users" role="tabpanel">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3>User Management</h3>
+                            <div>
+                                <input type="text" id="userSearch" placeholder="Search users..." class="form-control" style="display: inline-block; width: 200px; margin-right: 10px;">
+                                <button class="btn btn-primary" onclick="exportUsers()">Export Users</button>
+                                <button class="btn btn-success" onclick="addDemoUser()">Add Demo User</button>
+                                <button class="btn btn-info" onclick="refreshUsers()">Refresh</button>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th><input type="checkbox" id="selectAll"> ID</th>
+                                        <th>User Name</th>
+                                        <th>User Email</th>
+                                        <th>Registration Date</th>
+                                        <th>Last Login</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Users will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-danger" onclick="bulkDelete()" id="bulkDeleteBtn" style="display: none;">Delete Selected</button>
+                            <button class="btn btn-warning" onclick="bulkSuspend()" id="bulkSuspendBtn" style="display: none;">Suspend Selected</button>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>User ID</th>
-                                <th>User Name</th>
-                                <th>User Email</th>
-                                <th>Registration Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableBody">
-                            <!-- Users will be populated by JavaScript -->
-                        </tbody>
-                    </table>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div class="tab-pane fade" id="analytics" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">User Registration Trend</div>
+                            <div class="card-body">
+                                <canvas id="registrationChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Login Activity</div>
+                            <div class="card-body">
+                                <canvas id="activityChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">System Events Log</div>
+                            <div class="card-body">
+                                <div id="systemEvents" style="max-height: 300px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Tab -->
+            <div class="tab-pane fade" id="security" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Failed Login Attempts</div>
+                            <div class="card-body" id="failedLogins">
+                                <div class="text-center">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Security Settings</div>
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="enableBruteForce" checked>
+                                    <label class="form-check-label" for="enableBruteForce">Enable Brute Force Protection</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="enableSessionTimeout" checked>
+                                    <label class="form-check-label" for="enableSessionTimeout">Enable Session Timeout</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="logUserActivity" checked>
+                                    <label class="form-check-label" for="logUserActivity">Log User Activities</label>
+                                </div>
+                                <button class="btn btn-primary mt-3" onclick="saveSecuritySettings()">Save Settings</button>
+                                <button class="btn btn-danger mt-3" onclick="clearAllSessions()">Clear All Sessions</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Tab -->
+            <div class="tab-pane fade" id="system" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">System Information</div>
+                            <div class="card-body" id="systemInfo">
+                                <div class="text-center">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Maintenance Tools</div>
+                            <div class="card-body">
+                                <button class="btn btn-warning mb-2" onclick="clearOldData()">Clear Old Data</button><br>
+                                <button class="btn btn-info mb-2" onclick="exportSystemData()">Export System Data</button><br>
+                                <button class="btn btn-success mb-2" onclick="runHealthCheck()">Run Health Check</button><br>
+                                <button class="btn btn-danger mb-2" onclick="resetSystem()">Reset System (Danger)</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -237,10 +363,260 @@
             window.location.href = 'admin-login.html';
         }
 
+        // Enhanced admin functions
+        function refreshUsers() {
+            loadUsers();
+            updateStats();
+        }
+        
+        function searchUsers() {
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const filteredUsers = users.filter(user => 
+                user.name.toLowerCase().includes(searchTerm) ||
+                user.email.toLowerCase().includes(searchTerm)
+            );
+            displayUsers(filteredUsers);
+        }
+        
+        function displayUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const registrationDate = new Date(user.registrationDate || user.id).toLocaleDateString();
+                const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never';
+                const status = user.isActive !== false ? 'Active' : 'Suspended';
+                const statusColor = status === 'Active' ? 'success' : 'danger';
+                
+                const row = `
+                    <tr id="user-${user.id}">
+                        <td><input type="checkbox" class="user-checkbox" value="${user.id}"> ${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.email}</td>
+                        <td>${registrationDate}</td>
+                        <td>${lastLogin}</td>
+                        <td><span class="badge bg-${statusColor}">${status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="viewUserDetails(${user.id})">View</button>
+                            <button class="btn btn-sm btn-warning" onclick="editUser(${user.id})">Edit</button>
+                            <button class="btn btn-sm ${status === 'Active' ? 'btn-secondary' : 'btn-success'}" onclick="toggleUserStatus(${user.id})">${status === 'Active' ? 'Suspend' : 'Activate'}</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        function toggleUserStatus(userId) {
+            let users = JSON.parse(localStorage.getItem('users')) || [];
+            const userIndex = users.findIndex(u => u.id === userId);
+            
+            if (userIndex !== -1) {
+                users[userIndex].isActive = !users[userIndex].isActive;
+                localStorage.setItem('users', JSON.stringify(users));
+                loadUsers();
+                const action = users[userIndex].isActive ? 'activated' : 'suspended';
+                alert(`User ${action} successfully!`);
+            }
+        }
+        
+        function viewUserDetails(userId) {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const user = users.find(u => u.id === userId);
+            const activities = getUserActivities(userId);
+            
+            if (user) {
+                const modal = `
+                    <div id="userModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: flex; justify-content: center; align-items: center;">
+                        <div style="background: white; padding: 30px; border-radius: 8px; max-width: 600px; width: 90%; max-height: 80%; overflow-y: auto;">
+                            <h4>User Details: ${user.name}</h4>
+                            <table class="table table-bordered">
+                                <tr><td><strong>ID:</strong></td><td>${user.id}</td></tr>
+                                <tr><td><strong>Name:</strong></td><td>${user.name}</td></tr>
+                                <tr><td><strong>Email:</strong></td><td>${user.email}</td></tr>
+                                <tr><td><strong>Registration:</strong></td><td>${new Date(user.registrationDate || user.id).toLocaleString()}</td></tr>
+                                <tr><td><strong>Last Login:</strong></td><td>${user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}</td></tr>
+                                <tr><td><strong>Status:</strong></td><td>${user.isActive !== false ? 'Active' : 'Suspended'}</td></tr>
+                                <tr><td><strong>Total Activities:</strong></td><td>${activities.length}</td></tr>
+                            </table>
+                            <h5>Recent Activities (Last 5):</h5>
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                ${activities.slice(-5).reverse().map(activity => 
+                                    `<div style="padding: 5px; border-bottom: 1px solid #eee;">
+                                        <strong>${activity.action.replace(/_/g, ' ')}</strong> - ${new Date(activity.timestamp).toLocaleString()}
+                                    </div>`
+                                ).join('') || '<div>No activities recorded</div>'}
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-secondary" onclick="closeUserModal()">Close</button>
+                                <button class="btn btn-primary" onclick="exportUserData(${userId})">Export User Data</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modal);
+            }
+        }
+        
+        function closeUserModal() {
+            const modal = document.getElementById('userModal');
+            if (modal) modal.remove();
+        }
+        
+        function getUserActivities(userId) {
+            const activities = JSON.parse(localStorage.getItem('userActivities') || '{}');
+            return activities[userId] || [];
+        }
+        
+        function exportUserData(userId) {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const user = users.find(u => u.id === userId);
+            const activities = getUserActivities(userId);
+            
+            const userData = {
+                user,
+                activities,
+                exportDate: new Date().toISOString(),
+                exportedBy: 'admin'
+            };
+            
+            const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `user-${userId}-data-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
+        function bulkDelete() {
+            const selected = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                alert('No users selected');
+                return;
+            }
+            
+            if (confirm(`Delete ${selected.length} users? This cannot be undone.`)) {
+                let users = JSON.parse(localStorage.getItem('users') || '[]');
+                users = users.filter(user => !selected.includes(user.id.toString()));
+                localStorage.setItem('users', JSON.stringify(users));
+                loadUsers();
+                alert(`${selected.length} users deleted successfully`);
+            }
+        }
+        
+        function loadSecurityTab() {
+            const failedAttempts = JSON.parse(localStorage.getItem('failedAttempts') || '{}');
+            const failedLoginsDiv = document.getElementById('failedLogins');
+            
+            let content = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Email</th><th>Attempts</th><th>Last Attempt</th></tr></thead><tbody>';
+            
+            for (const [email, data] of Object.entries(failedAttempts)) {
+                content += `<tr><td>${email}</td><td>${data.count}</td><td>${new Date(data.lastAttempt).toLocaleString()}</td></tr>`;
+            }
+            
+            content += '</tbody></table></div>';
+            if (Object.keys(failedAttempts).length === 0) {
+                content = '<div class="text-center text-muted">No failed login attempts recorded</div>';
+            }
+            
+            failedLoginsDiv.innerHTML = content;
+        }
+        
+        function loadSystemTab() {
+            const systemInfoDiv = document.getElementById('systemInfo');
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const activities = JSON.parse(localStorage.getItem('userActivities') || '{}');
+            const events = JSON.parse(localStorage.getItem('systemEvents') || '[]');
+            
+            const totalActivities = Object.values(activities).reduce((sum, userActivities) => sum + userActivities.length, 0);
+            const storageUsed = JSON.stringify(localStorage).length;
+            
+            systemInfoDiv.innerHTML = `
+                <table class="table table-bordered">
+                    <tr><td><strong>Total Users:</strong></td><td>${users.length}</td></tr>
+                    <tr><td><strong>Total Activities:</strong></td><td>${totalActivities}</td></tr>
+                    <tr><td><strong>System Events:</strong></td><td>${events.length}</td></tr>
+                    <tr><td><strong>Storage Used:</strong></td><td>${(storageUsed / 1024).toFixed(2)} KB</td></tr>
+                    <tr><td><strong>Browser:</strong></td><td>${navigator.userAgent.split(' ')[0]}</td></tr>
+                    <tr><td><strong>Platform:</strong></td><td>${navigator.platform}</td></tr>
+                    <tr><td><strong>Online:</strong></td><td>${navigator.onLine ? 'Yes' : 'No'}</td></tr>
+                </table>
+            `;
+        }
+        
+        function clearAllSessions() {
+            if (confirm('This will log out all users. Continue?')) {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('sessionExpiry');
+                alert('All user sessions cleared');
+            }
+        }
+        
+        function resetSystem() {
+            if (confirm('This will delete ALL data including users and activities. This cannot be undone. Continue?')) {
+                const confirmText = prompt('Type "RESET" to confirm:');
+                if (confirmText === 'RESET') {
+                    localStorage.clear();
+                    alert('System reset complete. Redirecting to login...');
+                    window.location.href = 'index.html';
+                }
+            }
+        }
+        
+        // Enhanced event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Search functionality
+            document.getElementById('userSearch').addEventListener('input', searchUsers);
+            
+            // Select all functionality
+            document.getElementById('selectAll').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.user-checkbox');
+                checkboxes.forEach(cb => cb.checked = this.checked);
+                toggleBulkActions();
+            });
+            
+            // Tab change listeners
+            document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function(e) {
+                    const target = e.target.getAttribute('href');
+                    if (target === '#security') loadSecurityTab();
+                    if (target === '#system') loadSystemTab();
+                });
+            });
+        });
+        
+        function toggleBulkActions() {
+            const selected = document.querySelectorAll('.user-checkbox:checked').length;
+            document.getElementById('bulkDeleteBtn').style.display = selected > 0 ? 'inline-block' : 'none';
+            document.getElementById('bulkSuspendBtn').style.display = selected > 0 ? 'inline-block' : 'none';
+        }
+        
+        // Update loadUsers to use displayUsers
+        function loadUsers() {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            displayUsers(users);
+            updateStats();
+            
+            // Add event listeners to checkboxes
+            setTimeout(() => {
+                document.querySelectorAll('.user-checkbox').forEach(cb => {
+                    cb.addEventListener('change', toggleBulkActions);
+                });
+            }, 100);
+        }
+        
         // Initialize page
         window.onload = function() {
             if (checkAdminAuth()) {
                 loadUsers();
+                // Initialize other tabs data
+                setTimeout(() => {
+                    loadSecurityTab();
+                    loadSystemTab();
+                }, 500);
             }
         };
     </script>

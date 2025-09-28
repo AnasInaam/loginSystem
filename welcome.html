@@ -17,9 +17,20 @@
                 <div class="menu">Privacy</div>
                 <div class="menu">Features</div>
                 <div class="menu">Contact</div>
+                <div class="menu" id="sessionTimer" style="color: #666; font-size: 12px;"></div>
                 <div class="menu">
                     <button class="button-class" onclick="logout()">Logout</button>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Session timeout modal -->
+        <div id="sessionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+            <div style="background: white; padding: 30px; border-radius: 8px; text-align: center; max-width: 400px;">
+                <h3>Session Expiring</h3>
+                <p>Your session will expire in <span id="countdown">60</span> seconds due to inactivity.</p>
+                <button onclick="extendSession()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; margin-right: 10px; cursor: pointer;">Extend Session</button>
+                <button onclick="logout()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Logout</button>
             </div>
         </div>
         <div class="login-info-class">
@@ -62,6 +73,25 @@
                                 <h4>Settings</h4>
                                 <p>Customize your experience and manage preferences.</p>
                                 <button onclick="showSettings()" style="background: #ffc107; color: #212529; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Open Settings</button>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #dc3545;">
+                                <h4>Data Management</h4>
+                                <p>Export your data or manage account security.</p>
+                                <button onclick="exportUserData()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 5px;">Export Data</button>
+                                <button onclick="changePassword()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Change Password</button>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #17a2b8;">
+                                <h4>Quick Stats</h4>
+                                <p id="quickStats">Loading statistics...</p>
+                                <button onclick="refreshStats()" style="background: #17a2b8; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Refresh</button>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #6f42c1;">
+                                <h4>System Info</h4>
+                                <p>View system information and performance.</p>
+                                <button onclick="showSystemInfo()" style="background: #6f42c1; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">View Info</button>
                             </div>
                         </div>
                     </div>
@@ -135,38 +165,67 @@
             `;
         }
 
-        // Show activity log
+        // Show enhanced activity log
         function showActivity() {
-            const activities = [
-                { action: 'Login', time: new Date().toLocaleString(), status: 'Success' },
-                { action: 'Profile View', time: new Date(Date.now() - 300000).toLocaleString(), status: 'Success' },
-                { action: 'Dashboard Access', time: new Date(Date.now() - 600000).toLocaleString(), status: 'Success' }
-            ];
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const activities = getUserActivities(currentUser.id);
+            
+            // Get recent activities (last 20)
+            const recentActivities = activities.slice(-20).reverse();
             
             document.getElementById('dashboardContent').innerHTML = `
                 <h3>Activity Log</h3>
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background: #e9ecef;">
-                                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Action</th>
-                                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Time</th>
-                                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${activities.map(activity => `
-                                <tr>
-                                    <td style="padding: 10px; border: 1px solid #dee2e6;">${activity.action}</td>
-                                    <td style="padding: 10px; border: 1px solid #dee2e6;">${activity.time}</td>
-                                    <td style="padding: 10px; border: 1px solid #dee2e6; color: ${activity.status === 'Success' ? '#28a745' : '#dc3545'};">${activity.status}</td>
+                    <div style="margin-bottom: 15px; display: flex; justify-content: between; align-items: center;">
+                        <span>Showing last ${recentActivities.length} activities</span>
+                        <button onclick="exportActivities()" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Export All</button>
+                    </div>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #e9ecef; position: sticky; top: 0;">
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Action</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Time</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Details</th>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                ${recentActivities.map(activity => `
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #dee2e6; text-transform: capitalize;">${activity.action.replace(/_/g, ' ')}</td>
+                                        <td style="padding: 10px; border: 1px solid #dee2e6; font-size: 12px;">${new Date(activity.timestamp).toLocaleString()}</td>
+                                        <td style="padding: 10px; border: 1px solid #dee2e6; font-size: 12px;">${activity.details ? JSON.stringify(activity.details) : '-'}</td>
+                                    </tr>
+                                `).join('')}
+                                ${recentActivities.length === 0 ? '<tr><td colspan="3" style="padding: 20px; text-align: center; color: #666;">No activities recorded</td></tr>' : ''}
+                            </tbody>
+                        </table>
+                    </div>
                     <button onclick="showDashboard()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 15px;">Back to Dashboard</button>
                 </div>
             `;
+            
+            logUserActivity('activity_log_viewed');
+        }
+        
+        function exportActivities() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const activities = getUserActivities(currentUser.id);
+            
+            const csvContent = "Action,Timestamp,Details,User Agent\n" + 
+                activities.map(activity => 
+                    `"${activity.action}","${activity.timestamp}","${activity.details ? JSON.stringify(activity.details).replace(/"/g, '""') : ''}","${activity.userAgent || ''}"`
+                ).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `activity-log-${currentUser.id}-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            logUserActivity('activity_log_exported');
         }
 
         // Show settings
@@ -228,8 +287,264 @@
             `;
         }
 
+        // Session management variables
+        let sessionTimer = null;
+        let warningTimer = null;
+        let countdownTimer = null;
+        let activityTimeout = null;
+        
+        // Enhanced session management
+        function startSessionManagement() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser || !currentUser.rememberMe) {
+                const sessionDuration = 30 * 60 * 1000; // 30 minutes
+                const warningTime = 2 * 60 * 1000; // 2 minutes before expiry
+                
+                // Clear existing timers
+                clearTimeout(sessionTimer);
+                clearTimeout(warningTimer);
+                
+                // Set session expiry warning
+                warningTimer = setTimeout(() => {
+                    showSessionWarning();
+                }, sessionDuration - warningTime);
+                
+                // Set session expiry
+                sessionTimer = setTimeout(() => {
+                    logout('Session expired due to inactivity');
+                }, sessionDuration);
+                
+                // Update session timer display
+                updateSessionDisplay(sessionDuration);
+            }
+        }
+        
+        function showSessionWarning() {
+            document.getElementById('sessionModal').style.display = 'flex';
+            let countdown = 60;
+            document.getElementById('countdown').textContent = countdown;
+            
+            countdownTimer = setInterval(() => {
+                countdown--;
+                document.getElementById('countdown').textContent = countdown;
+                if (countdown <= 0) {
+                    clearInterval(countdownTimer);
+                    logout('Session expired');
+                }
+            }, 1000);
+        }
+        
+        function extendSession() {
+            document.getElementById('sessionModal').style.display = 'none';
+            clearInterval(countdownTimer);
+            clearTimeout(sessionTimer);
+            clearTimeout(warningTimer);
+            startSessionManagement();
+            logUserActivity('session_extended');
+        }
+        
+        function updateSessionDisplay(duration) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const timerElement = document.getElementById('sessionTimer');
+            
+            if (currentUser && currentUser.rememberMe) {
+                timerElement.textContent = 'Remembered';
+            } else {
+                const interval = setInterval(() => {
+                    duration -= 1000;
+                    if (duration <= 0) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    const minutes = Math.floor(duration / 60000);
+                    timerElement.textContent = `${minutes}m left`;
+                }, 60000); // Update every minute
+            }
+        }
+        
+        function resetActivityTimer() {
+            clearTimeout(activityTimeout);
+            activityTimeout = setTimeout(() => {
+                logUserActivity('user_inactive');
+            }, 5 * 60 * 1000); // 5 minutes of inactivity
+        }
+        
+        // Enhanced utility functions
+        function exportUserData() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) return;
+            
+            const userData = {
+                profile: {
+                    id: currentUser.id,
+                    name: currentUser.name,
+                    email: currentUser.email,
+                    registrationDate: currentUser.registrationDate,
+                    lastLogin: currentUser.lastLogin
+                },
+                activities: getUserActivities(currentUser.id),
+                preferences: currentUser.profile ? currentUser.profile.preferences : {},
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `user-data-${currentUser.id}-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            logUserActivity('data_exported');
+        }
+        
+        function changePassword() {
+            const currentPassword = prompt('Enter your current password:');
+            if (!currentPassword) return;
+            
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (currentUser.password !== currentPassword) {
+                alert('Current password is incorrect!');
+                return;
+            }
+            
+            const newPassword = prompt('Enter your new password (min 8 characters):');
+            if (!newPassword || newPassword.length < 8) {
+                alert('New password must be at least 8 characters long!');
+                return;
+            }
+            
+            const confirmPassword = prompt('Confirm your new password:');
+            if (newPassword !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            // Update password
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            if (userIndex !== -1) {
+                users[userIndex].password = newPassword;
+                currentUser.password = newPassword;
+                
+                localStorage.setItem('users', JSON.stringify(users));
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                alert('Password changed successfully!');
+                logUserActivity('password_changed');
+            }
+        }
+        
+        function refreshStats() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const activities = getUserActivities(currentUser.id);
+            
+            const stats = `
+                Account Age: ${Math.floor((new Date() - new Date(currentUser.registrationDate)) / (1000 * 60 * 60 * 24))} days<br>
+                Total Logins: ${activities.filter(a => a.action === 'login').length}<br>
+                Last Activity: ${activities.length > 0 ? new Date(activities[activities.length - 1].timestamp).toLocaleString() : 'N/A'}
+            `;
+            
+            document.getElementById('quickStats').innerHTML = stats;
+            logUserActivity('stats_refreshed');
+        }
+        
+        function showSystemInfo() {
+            const info = {
+                browser: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookiesEnabled: navigator.cookieEnabled,
+                onlineStatus: navigator.onLine,
+                screenResolution: `${screen.width}x${screen.height}`,
+                colorDepth: `${screen.colorDepth}-bit`,
+                timezoneOffset: new Date().getTimezoneOffset(),
+                localStorage: typeof(Storage) !== "undefined"
+            };
+            
+            document.getElementById('dashboardContent').innerHTML = `
+                <h3>System Information</h3>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; max-width: 600px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr><td style="padding: 8px; border-bottom: 1px solid #dee2e6; font-weight: bold;">Browser:</td><td style="padding: 8px; border-bottom: 1px solid #dee2e6;">${info.browser}</td></tr>
+                        <tr><td style="padding: 8px; border-bottom: 1px solid #dee2e6; font-weight: bold;">Platform:</td><td style="padding: 8px; border-bottom: 1px solid #dee2e6;">${info.platform}</td></tr>
+                        <tr><td style="padding: 8px; border-bottom: 1px solid #dee2e6; font-weight: bold;">Language:</td><td style="padding: 8px; border-bottom: 1px solid #dee2e6;">${info.language}</td></tr>
+                        <tr><td style="padding: 8px; border-bottom: 1px solid #dee2e6; font-weight: bold;">Screen:</td><td style="padding: 8px; border-bottom: 1px solid #dee2e6;">${info.screenResolution} (${info.colorDepth})</td></tr>
+                        <tr><td style="padding: 8px; border-bottom: 1px solid #dee2e6; font-weight: bold;">Online:</td><td style="padding: 8px; border-bottom: 1px solid #dee2e6;">${info.onlineStatus ? 'Yes' : 'No'}</td></tr>
+                        <tr><td style="padding: 8px; border-bottom: 1px solid #dee2e6; font-weight: bold;">LocalStorage:</td><td style="padding: 8px; border-bottom: 1px solid #dee2e6;">${info.localStorage ? 'Supported' : 'Not Supported'}</td></tr>
+                    </table>
+                    <button onclick="showDashboard()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 15px;">Back to Dashboard</button>
+                </div>
+            `;
+            
+            logUserActivity('system_info_viewed');
+        }
+        
+        function getUserActivities(userId) {
+            const activities = JSON.parse(localStorage.getItem('userActivities') || '{}');
+            return activities[userId] || [];
+        }
+        
+        function logUserActivity(action, details = {}) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) return;
+            
+            const activities = JSON.parse(localStorage.getItem('userActivities') || '{}');
+            if (!activities[currentUser.id]) {
+                activities[currentUser.id] = [];
+            }
+            
+            activities[currentUser.id].push({
+                action,
+                details,
+                timestamp: new Date().toISOString(),
+                ip: 'localhost', // In real app, this would be actual IP
+                userAgent: navigator.userAgent.substring(0, 50) + '...'
+            });
+            
+            // Keep only last 50 activities per user
+            if (activities[currentUser.id].length > 50) {
+                activities[currentUser.id] = activities[currentUser.id].slice(-50);
+            }
+            
+            localStorage.setItem('userActivities', JSON.stringify(activities));
+        }
+        
+        // Enhanced logout with reason
+        function logout(reason = 'User logout') {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (currentUser) {
+                logUserActivity('logout', { reason });
+            }
+            
+            // Clear session data
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('sessionExpiry');
+            
+            // Clear timers
+            clearTimeout(sessionTimer);
+            clearTimeout(warningTimer);
+            clearInterval(countdownTimer);
+            clearTimeout(activityTimeout);
+            
+            alert(`Logged out: ${reason}`);
+            window.location.href = 'index.html';
+        }
+        
+        // Activity tracking
+        document.addEventListener('click', resetActivityTimer);
+        document.addEventListener('keypress', resetActivityTimer);
+        document.addEventListener('mousemove', resetActivityTimer);
+        
         // Initialize page on load
-        window.onload = initPage;
+        window.onload = function() {
+            initPage();
+            startSessionManagement();
+            resetActivityTimer();
+            refreshStats();
+            logUserActivity('dashboard_accessed');
+        };
     </script>
 </body>
 

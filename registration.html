@@ -41,11 +41,24 @@
                         </div>
                         <div class="form-group">
                             <label class="label-class" for="password">Password:</label>
-                            <input class="form-input" id="password" name="password" type="password" placeholder="Password" required>
+                            <div style="position: relative;">
+                                <input class="form-input" id="password" name="password" type="password" placeholder="Password (min 8 characters)" required minlength="8">
+                                <button type="button" id="togglePassword" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer;">👁️</button>
+                            </div>
+                            <div id="passwordStrength" style="margin-top: 5px; font-size: 12px;"></div>
+                            <div id="passwordRequirements" style="margin-top: 5px; font-size: 11px; color: #666;">
+                                <div>Password must contain:</div>
+                                <div id="req-length">✗ At least 8 characters</div>
+                                <div id="req-upper">✗ One uppercase letter</div>
+                                <div id="req-lower">✗ One lowercase letter</div>
+                                <div id="req-number">✗ One number</div>
+                                <div id="req-special">✗ One special character</div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label class="label-class" for="confirmPassword">Confirm Password:</label>
                             <input class="form-input" id="confirmPassword" name="confirmPassword" type="password" placeholder="Confirm Password" required>
+                            <div id="passwordMatch" style="margin-top: 5px; font-size: 12px;"></div>
                         </div>
                         <div class="form-group-one">
                             <button class="button-class" type="button" onclick="resetForm()">Reset</button>
@@ -61,69 +74,281 @@
     </div>
 
     <script>
+        // Enhanced registration with real-time validation
         document.getElementById('registrationForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
             
-            // Validation
-            if (!username) {
-                alert('Please enter the username');
-                return;
-            }
+            // Show loading state
+            submitBtn.textContent = 'Creating Account...';
+            submitBtn.disabled = true;
             
-            if (!email) {
-                alert('Please enter the email');
-                return;
-            }
-            
-            if (!password) {
-                alert('Please enter the password');
-                return;
-            }
-            
-            if (password !== confirmPassword) {
-                alert('Passwords do not match!');
-                return;
-            }
-            
-            if (password.length < 6) {
-                alert('Password must be at least 6 characters long');
-                return;
-            }
-            
-            // Get existing users
-            const users = JSON.parse(localStorage.getItem('users')) || [];
-            
-            // Check if email already exists
-            const existingUser = users.find(u => u.email === email);
-            if (existingUser) {
-                alert(`Email ${email} is already registered. Please go to login page!`);
-                return;
-            }
-            
-            // Create new user
-            const newUser = {
-                id: Date.now(), // Simple ID generation
-                name: username,
-                email: email,
-                password: password
-            };
-            
-            // Add user to array and save
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            alert('Registration successful! Redirecting to login page...');
-            window.location.href = 'index.html';
+            setTimeout(() => {
+                try {
+                    // Enhanced validation
+                    if (!username || username.length < 2) {
+                        showError('Username must be at least 2 characters long');
+                        return;
+                    }
+                    
+                    if (!/^[a-zA-Z0-9_\s]+$/.test(username)) {
+                        showError('Username can only contain letters, numbers, spaces, and underscores');
+                        return;
+                    }
+                    
+                    if (!isValidEmail(email)) {
+                        showError('Please enter a valid email address');
+                        return;
+                    }
+                    
+                    const passwordStrength = checkPasswordStrength(password);
+                    if (passwordStrength.score < 3) {
+                        showError('Password is too weak. Please follow the requirements above.');
+                        return;
+                    }
+                    
+                    if (password !== confirmPassword) {
+                        showError('Passwords do not match!');
+                        return;
+                    }
+                    
+                    // Get existing users
+                    const users = JSON.parse(localStorage.getItem('users')) || [];
+                    
+                    // Check if email already exists (case-insensitive)
+                    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+                    if (existingUser) {
+                        showError(`Email ${email} is already registered. Please go to login page!`);
+                        return;
+                    }
+                    
+                    // Check if username already exists
+                    const existingUsername = users.find(u => u.name.toLowerCase() === username.toLowerCase());
+                    if (existingUsername) {
+                        showError('Username is already taken. Please choose a different one.');
+                        return;
+                    }
+                    
+                    // Create new user with enhanced data
+                    const newUser = {
+                        id: Date.now(),
+                        name: username,
+                        email: email.toLowerCase(),
+                        password: password, // In production, this should be hashed
+                        registrationDate: new Date().toISOString(),
+                        lastLogin: null,
+                        isActive: true,
+                        profile: {
+                            avatar: null,
+                            bio: '',
+                            preferences: {
+                                theme: 'light',
+                                notifications: true
+                            }
+                        }
+                    };
+                    
+                    // Add user to array and save
+                    users.push(newUser);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    
+                    // Log registration event
+                    logEvent('user_registered', { userId: newUser.id, email: newUser.email });
+                    
+                    showSuccess('Registration successful! Redirecting to login page...');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                    
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    showError('An error occurred during registration. Please try again.');
+                } finally {
+                    submitBtn.textContent = 'Register';
+                    submitBtn.disabled = false;
+                }
+            }, 800);
         });
 
         function resetForm() {
             document.getElementById('registrationForm').reset();
+            clearMessages();
+            document.getElementById('passwordStrength').innerHTML = '';
+            document.getElementById('passwordMatch').innerHTML = '';
+            resetPasswordRequirements();
         }
+        
+        // Enhanced utility functions
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        function checkPasswordStrength(password) {
+            let score = 0;
+            const requirements = {
+                length: password.length >= 8,
+                upper: /[A-Z]/.test(password),
+                lower: /[a-z]/.test(password),
+                number: /\d/.test(password),
+                special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+            };
+            
+            score += requirements.length ? 1 : 0;
+            score += requirements.upper ? 1 : 0;
+            score += requirements.lower ? 1 : 0;
+            score += requirements.number ? 1 : 0;
+            score += requirements.special ? 1 : 0;
+            
+            return { score, requirements };
+        }
+        
+        function updatePasswordStrength() {
+            const password = document.getElementById('password').value;
+            const result = checkPasswordStrength(password);
+            const strengthDiv = document.getElementById('passwordStrength');
+            
+            if (password.length === 0) {
+                strengthDiv.innerHTML = '';
+                resetPasswordRequirements();
+                return;
+            }
+            
+            const colors = ['#ff4444', '#ff8800', '#ffaa00', '#88aa00', '#44aa44'];
+            const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+            
+            strengthDiv.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="flex: 1; height: 6px; background: #eee; border-radius: 3px; overflow: hidden;">
+                        <div style="height: 100%; background: ${colors[result.score]}; width: ${(result.score / 5) * 100}%; transition: all 0.3s;"></div>
+                    </div>
+                    <span style="color: ${colors[result.score]}; font-weight: bold;">${labels[result.score]}</span>
+                </div>
+            `;
+            
+            // Update requirements checklist
+            updatePasswordRequirements(result.requirements);
+        }
+        
+        function updatePasswordRequirements(requirements) {
+            const reqElements = {
+                'req-length': requirements.length,
+                'req-upper': requirements.upper,
+                'req-lower': requirements.lower,
+                'req-number': requirements.number,
+                'req-special': requirements.special
+            };
+            
+            for (const [id, met] of Object.entries(reqElements)) {
+                const element = document.getElementById(id);
+                if (met) {
+                    element.innerHTML = element.innerHTML.replace('✗', '✓');
+                    element.style.color = '#44aa44';
+                } else {
+                    element.innerHTML = element.innerHTML.replace('✓', '✗');
+                    element.style.color = '#ff4444';
+                }
+            }
+        }
+        
+        function resetPasswordRequirements() {
+            const requirements = ['req-length', 'req-upper', 'req-lower', 'req-number', 'req-special'];
+            requirements.forEach(id => {
+                const element = document.getElementById(id);
+                element.innerHTML = element.innerHTML.replace('✓', '✗');
+                element.style.color = '#666';
+            });
+        }
+        
+        function checkPasswordMatch() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const matchDiv = document.getElementById('passwordMatch');
+            
+            if (confirmPassword.length === 0) {
+                matchDiv.innerHTML = '';
+                return;
+            }
+            
+            if (password === confirmPassword) {
+                matchDiv.innerHTML = '<span style="color: #44aa44;">✓ Passwords match</span>';
+            } else {
+                matchDiv.innerHTML = '<span style="color: #ff4444;">✗ Passwords do not match</span>';
+            }
+        }
+        
+        function showError(message) {
+            clearMessages();
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-error';
+            errorDiv.style.cssText = 'background: #fee; border: 1px solid #fcc; color: #c33; padding: 10px; border-radius: 4px; margin: 10px 0; text-align: center;';
+            errorDiv.textContent = message;
+            document.querySelector('.form-class').appendChild(errorDiv);
+        }
+        
+        function showSuccess(message) {
+            clearMessages();
+            const successDiv = document.createElement('div');
+            successDiv.className = 'alert alert-success';
+            successDiv.style.cssText = 'background: #efe; border: 1px solid #cfc; color: #3c3; padding: 10px; border-radius: 4px; margin: 10px 0; text-align: center;';
+            successDiv.textContent = message;
+            document.querySelector('.form-class').appendChild(successDiv);
+        }
+        
+        function clearMessages() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => alert.remove());
+        }
+        
+        function logEvent(event, data) {
+            const events = JSON.parse(localStorage.getItem('systemEvents') || '[]');
+            events.push({
+                event,
+                data,
+                timestamp: new Date().toISOString()
+            });
+            // Keep only last 100 events
+            if (events.length > 100) {
+                events.splice(0, events.length - 100);
+            }
+            localStorage.setItem('systemEvents', JSON.stringify(events));
+        }
+        
+        // Real-time validation setup
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const togglePassword = document.getElementById('togglePassword');
+            
+            // Password strength checking
+            passwordInput.addEventListener('input', updatePasswordStrength);
+            
+            // Password matching
+            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+            
+            // Password visibility toggle
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.textContent = type === 'password' ? '👁️' : '🙈';
+            });
+            
+            // Email validation
+            document.getElementById('email').addEventListener('blur', function() {
+                const email = this.value.trim();
+                if (email && !isValidEmail(email)) {
+                    showError('Please enter a valid email address');
+                } else {
+                    clearMessages();
+                }
+            });
+        });
     </script>
 </body>
 
